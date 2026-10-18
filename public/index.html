@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #f2f4f7;
+    }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 360px;
+    }
+    h2 { margin: 0 0 1.5rem; text-align: center; }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccd0d5;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: #4f46e5; }
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover { background: #4338ca; }
+    .error { color: #dc2626; font-size: 0.9rem; min-height: 1.2rem; margin-bottom: 0.5rem; }
+    .welcome { text-align: center; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- Login form -->
+    <form id="loginForm" class="${''}">
+      <h2>Login</h2>
+      <div class="error" id="error"></div>
+      <label for="username">Username</label>
+      <input type="text" id="username" required autocomplete="username" />
+      <label for="password">Password</label>
+      <input type="password" id="password" required autocomplete="current-password" />
+      <button type="submit">Log in</button>
+    </form>
+
+    <!-- Shown after login -->
+    <div id="welcome" class="welcome hidden">
+      <h2 id="welcomeText"></h2>
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorEl = document.getElementById('error');
+    const welcome = document.getElementById('welcome');
+    const welcomeText = document.getElementById('welcomeText');
+
+    function showWelcome(username) {
+      loginForm.classList.add('hidden');
+      welcomeText.textContent = `Welcome, ${username}!`;
+      welcome.classList.remove('hidden');
+    }
+
+    function showLogin() {
+      welcome.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+    }
+
+    // Check if already logged in
+    fetch('/api/me')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => data && showWelcome(data.username));
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        errorEl.textContent = data.message;
+        return;
+      }
+      showWelcome(data.username);
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      showLogin();
+    });
+  </script>
+</body>
+</html>
